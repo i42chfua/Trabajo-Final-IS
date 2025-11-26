@@ -2,33 +2,32 @@
 #define DATABASE_H
 
 #include <string>
-#include <iostream>
 #include <vector>
-#include "sqlite3.h"  // libreria de sqlite en C++
+#include "../lib/sqlite3.h" 
+#include "Usuario.h"
 
 using namespace std;
 
 class Database {
 private:
-    sqlite3* db; // Puntero a la base de datos
+    sqlite3* db;
+    // Metodo privado para ejecutar querys (INSERT, UPDATE)
+    bool ejecutarQuery(string sql);
 
 public:
-
-    // Constructor
     Database(const string& path);
-    
-    // Destructor: Cierra la conexion
     ~Database();
 
-    // Devuelve el rol del usuario si existe, o string vacio si falla
-    string validarLogin(string dni);
+    // --- AUTENTICACIÓN ---
+    // Devuelve un objeto Usuario completo si el DNI existe, o un Usuario con id=-1 si falla
+    Usuario login(string dni);
 
-    // Funcion para ejecutar Queries de SQLite
-    bool ejecutarQuery(string sql);
-    
-    // NOTA: Agregar aqui las funciones:
-    // vector<Usuario> getListaAlumnos();
-    // void guardarMensaje(...);
+    // --- PARTE DE ASIGNACIÓN AUTOMÁTICA ---
+    // Busca un tutor libre y lo vincula al alumno. Devuelve booleano.
+    bool asignarTutorAutomaticamente(int idAlumno);
+
+    // --- MÉTODOS ---
+    // Metodos para listar usuarios o guardar mensajes
 };
 
 #endif

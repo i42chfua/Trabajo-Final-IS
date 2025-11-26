@@ -1,0 +1,7 @@
+El compilador que usamos antes de crear el Makefile para poder hacer pruebas es:
+
+g++ src/main.cpp src/Database.cpp lib/sqlite3.o -o programa.exe -I include
+
+El compilador de los SQLite (*No tocar excepto casos necesarios*):
+
+gcc -c lib/sqlite3.c -o lib/sqlite3.o -I include

@@ -10,24 +10,30 @@ using namespace std;
 
 class Database {
 private:
+
+    // Base de datos con SQLite
     sqlite3* db;
-    // Metodo privado para ejecutar querys (INSERT, UPDATE)
     bool ejecutarQuery(string sql);
 
 public:
+
+    // Constructor
     Database(const string& path);
+    // Destructor
     ~Database();
 
-    // --- AUTENTICACIÓN ---
-    // Devuelve un objeto Usuario completo si el DNI existe, o un Usuario con id=-1 si falla
-    Usuario login(string dni);
+    // Login de los usuarios
+    Usuario login(string dni, string password);
 
-    // --- PARTE DE ASIGNACIÓN AUTOMÁTICA ---
-    // Busca un tutor libre y lo vincula al alumno. Devuelve booleano.
+    // Registro de los usuarios
+    bool registrarUsuario(Usuario nuevoUsuario);
+
+    // Asignacion automatica de tutor a alumno
     bool asignarTutorAutomaticamente(int idAlumno);
+    
+    // Funcion para poder ver el nombre de la persona que tutorizas o que te tutoriza
+    string getNombrePorID(int idUsuario);   
 
-    // --- MÉTODOS ---
-    // Metodos para listar usuarios o guardar mensajes
 };
 
 #endif

@@ -4,4 +4,4 @@ g++ src/main.cpp src/Database.cpp lib/sqlite3.o -o programa.exe -I include
 
 El compilador de los SQLite (*No tocar excepto casos necesarios*):
 
-gcc -c lib/sqlite3.c -o lib/sqlite3.o -I include
+gcc -c sqlite3.c -o sqlite3.o -I include

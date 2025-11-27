@@ -1,206 +1,267 @@
 #include <iostream>
+#include <limits> 
 #include "../include/Database.h"
 #include "../include/Usuario.h"
 
-// Incluir aquí las cabeceras de tus compañeros cuando las creen
-// #include "../include/GestorChat.h"
-// #include "../include/GestorTutorias.h"
-
 using namespace std;
 
- void mostrarMenuCoordinador(Usuario& user, Database& db) {
+void mostrarMenuCoordinador(Usuario& user, Database& db) {
+    // Menu de coordinador
     int opcion = 0;
+
     do {
+
         cout << "\n--- MENU COORDINADOR (" << user.nombre << ") ---" << endl;
         cout << "1. Asignar Tutor manualmente" << endl;
         cout << "2. Volver (Cerrar Sesion)" << endl;
         cout << "Opcion: ";
-        cin >> opcion; // <--- ESTO ES LO QUE FALTABA (Esperar input)
 
+        cin >> opcion;
+        
         switch (opcion) {
-            case 1:
-                cout << ">> Aqui ira la logica de asignar tutor (Compañero 1)" << endl;
 
-                // gestorTutorias.asignarTutor(db);
-                
+            case 1:
+                cout << ">> Logica Asignar Tutor" << endl;
                 break;
-            case 2:
-                cout << "Cerrando sesion..." << endl;
-                break;
-            default:
-                cout << "Opcion no valida." << endl;
+
+            case 2: break;
+
+            default: cout << "Opcion no valida." << endl;
+
         }
-    } while (opcion != 2); 
+
+    } while (opcion != 2);
 }
 
 void mostrarMenuTutor(Usuario& user, Database& db) {
+    // Menu de tutor
     int opcion = 0;
     do {
         cout << "\n--- MENU TUTOR (" << user.nombre << ") ---" << endl;
+        
         if (user.id_vinculado == 0) {
 
-            cout << "AVISO: No tienes alumno asignado." << endl;
+            cout << "(!) AVISO: Actualmente no tienes ningun alumno asignado." << endl;
 
         } else {
 
-            cout << "Tutorizando al alumno con ID: " << user.id_vinculado << endl;
-            cout << "1. Abrir Chat con Alumno" << endl;
+            string nombreAlumno = db.getNombrePorID(user.id_vinculado);
+            cout << "\n--> Estas tutorizando al alumno: " << nombreAlumno << endl;
+            
+            cout << "1. Abrir Chat con " << nombreAlumno << endl;
 
         }
 
-        cout << "2. Volver" << endl;
+        cout << "2. Cerrar Sesion" << endl;
         cout << "Opcion: ";
         cin >> opcion;
 
         if (opcion == 1 && user.id_vinculado != 0) {
 
-             cout << ">> Aqui ira el chat (Compañero 2)" << endl;
+             cout << ">> Abriendo chat..." << endl;
+             // gestorChat.abrirChat(...); Funcion de chat
              
         } else if (opcion != 2) {
 
              cout << "Opcion no valida." << endl;
 
         }
+
     } while (opcion != 2);
+
 }
 
 void mostrarMenuAlumno(Usuario& user, Database& db) {
-    int opcion = 0;
-    do {
 
+    int opcion = 0;
+
+    do {
         cout << "\n--- MENU ALUMNO (" << user.nombre << ") ---" << endl;
         
-        // Logica de asignación automática (Tu parte)
         if (user.id_vinculado == 0) {
-
-            cout << "(!) No tienes tutor. Buscando uno disponible..." << endl;
 
             if (db.asignarTutorAutomaticamente(user.id)) {
 
-                cout << "¡EXITO! Se te ha asignado un tutor. Reinicia sesion para ver cambios." << endl;
-
-                // Recargamos datos del usuario actualizados desde la BD
-                
-                user = db.login(user.dni); 
+                cout << "INFO! Se te ha asignado tutor automaticamente." << endl;
+                user = db.login(user.dni, user.password); 
 
             } else {
 
-                cout << "Lo sentimos, no hay tutores libres." << endl;
+                cout << "(!) Buscando tutor... (No hay disponibles aun)" << endl;
 
             }
-        } 
+        }
         
         if (user.id_vinculado != 0) {
 
-            cout << "Tu tutor es el ID: " << user.id_vinculado << endl;
-            cout << "1. Abrir Chat con Tutor" << endl;
+            string nombreTutor = db.getNombrePorID(user.id_vinculado);
+            cout << "\n--> Tu tutor asignado es: " << nombreTutor << endl;
+            
+            cout << "1. Abrir Chat con " << nombreTutor << endl;
 
         }
 
-        cout << "2. Volver" << endl;
+        cout << "2. Cerrar Sesion" << endl;
+
         cout << "Opcion: ";
         cin >> opcion;
-
+        
+        // Logica del chat
         if (opcion == 1 && user.id_vinculado != 0) {
 
-             cout << ">> Aqui ira el chat" << endl;
+             cout << ">> Abriendo chat..." << endl;
 
         }
 
     } while (opcion != 2);
 }
 
-// -- Parte antigua (Backup por si acaso) --
+void realizarRegistro(Database& db) {
+    // Registro de nuevos usuarios *con seguridad para tutores y coordinadores*
 
-/*
-
-void mostrarMenuCoordinador(Usuario& user, Database& db) {
- 
-    cout << "\n--- MENU COORDINADOR (" << user.nombre << ") ---" << endl;
-    cout << "1. Asignar Tutor manualmente" << endl;
-    cout << "2. Volver" << endl;
-    // Aquí iría la llamada al código de tu compañero 1
-    cout << "Opcion: ";
-}
-
-void mostrarMenuTutor(Usuario& user, Database& db) {
-    cout << "\n--- MENU TUTOR (" << user.nombre << ") ---" << endl;
-    if (user.id_vinculado == 0) {
-        cout << "AVISO: No tienes alumno asignado." << endl;
-    } else {
-        cout << "Tutorizando al alumno con ID: " << user.id_vinculado << endl;
-        cout << "1. Abrir Chat con Alumno" << endl;
-        // Aquí iría la llamada al código de tu compañero 2
-    }
-    cout << "2. Volver" << endl;
-}
-
-void mostrarMenuAlumno(Usuario& user, Database& db) {
-    cout << "\n--- MENU ALUMNO (" << user.nombre << ") ---" << endl;
+    string nombre, dni, pass, rol, token;
+    int opcionRol;
     
-    // --- TU IMPLEMENTACIÓN: ASIGNACIÓN AUTOMÁTICA ---
-    if (user.id_vinculado == 0) {
-        cout << "Buscando tutor disponible..." << endl;
-        if (db.asignarTutorAutomaticamente(user.id)) {
-            cout << "¡ÉXITO! Se te ha asignado un tutor nuevo. Vuelve a iniciar sesión para actualizar." << endl;
-            // Recargamos el usuario para ver el cambio
-            user = db.login(user.dni); 
+    cout << "\n--- REGISTRO DE NUEVO USUARIO ---" << endl;
+    
+   cin.ignore(); 
+    
+    cout << "Nombre completo (ej. Juan Perez): ";
+    getline(cin, nombre); 
+    
+    cout << "DNI: ";
+    cin >> dni;
+    
+    cout << "Contraseña: ";
+    cin >> pass;
+    
+    cout << "Selecciona el Rol:\n1. ALUMNO\n2. TUTOR\n3. COORDINADOR\n> ";
+    cin >> opcionRol;
+    
+    if (opcionRol == 1) {
+        rol = "ALUMNO";
+    } 
+    else if (opcionRol == 2) {
+
+        // SEGURIDAD PARA TUTORES
+        cout << "Introduce el codigo de autorizacion para TUTORES: ";
+        cin >> token;
+        if (token == "tutoresUCO") { 
+            rol = "TUTOR";
         } else {
-            cout << "Lo sentimos, no hay tutores libres en este momento." << endl;
+            cout << "ERROR: Codigo incorrecto. No tienes permiso para ser Tutor." << endl;
+            return; 
+        }
+    } 
+    else if (opcionRol == 3) {
+
+        // SEGURIDAD PARA COORDINADORES
+        cout << "Introduce el codigo de autorizacion para COORDINADORES: ";
+        cin >> token;
+        if (token == "coordinadoresUCO") { 
+            rol = "COORDINADOR";
+        } else {
+             cout << "ERROR: Codigo incorrecto. Intento de acceso no autorizado." << endl;
+             return;
+        }
+    } 
+    else {
+        cout << "Rol no valido. Registro cancelado." << endl;
+        return;
+    }
+    
+    Usuario nuevo(0, nombre, dni, pass, rol, 0);
+    
+    if (db.registrarUsuario(nuevo)) {
+        cout << "¡Registro exitoso como " << rol << "! Ahora puedes iniciar sesion." << endl;
+        
+        // Asignacion automatica para alumnos
+        if (rol == "ALUMNO") {
+             Usuario temp = db.login(dni, pass);
+             db.asignarTutorAutomaticamente(temp.id);
         }
     } else {
-        cout << "Tu tutor asignado es ID: " << user.id_vinculado << endl;
-        cout << "1. Abrir Chat con Tutor" << endl;
-        // Aquí iría la llamada al código de tu compañero 2
+        cout << "Error al registrar. Puede que el DNI ya exista." << endl;
     }
-    cout << "2. Volver" << endl;
 }
 
-*/
-
+// --- MAIN PRINCIPAL ---
 int main() {
     Database db("db/tutorias.db");
     
-    // Pequeño hack para meter datos iniciales si la DB está vacía
-    // db.ejecutarQuery("INSERT OR IGNORE INTO USUARIOS (NOMBRE, DNI, ROL) VALUES ('Admin', '0000', 'COORDINADOR');");
-
+    int opcionInicio = 0;
+    
     while (true) {
 
-        cout << "\n=== SISTEMA DE GESTION DE TUTORIAS ===" << endl;
-        cout << "Introduce tu DNI para entrar (o 'salir'): ";
-        string dni;
-        cin >> dni;
+        cout << "\n=======================================" << endl;
+        cout << "   BIENVENIDO AL GESTOR DE TUTORIAS    " << endl;
+        cout << "=======================================\n" << endl;
 
-        if (dni == "salir") break;
+        cout << "1. Iniciar Sesion" << endl;
+        cout << "2. Registrarse" << endl;
+        cout << "3. Salir del programa" << endl;
+        cout << "Elige una opcion: ";
 
-        // 1. LOGIN (Tu parte)
+
+        if (!(cin >> opcionInicio)) {         
+
+                cout << "Error: Debes introducir un numero valido." << endl;
+                cin.clear();                      
+                cin.ignore(10000, '\n');          
+                continue;                        
+
+        }
         
-        Usuario usuarioLogueado = db.login(dni);
+        if (opcionInicio == 3) {
 
-        if (usuarioLogueado.id == -1) {
-            cout << "Error: DNI no encontrado." << endl;
-        } else {
-            cout << "Bienvenido, " << usuarioLogueado.nombre << endl;
+            cout << "Saliendo..." << endl;
+            break;
+
+        }
+        
+        if (opcionInicio == 2) {
+
+            realizarRegistro(db);
+
+        }  else if (opcionInicio == 1) {
+
+            string dni, pass;
+            cout << "\n--- INICIO DE SESION ---" << endl;
+            cout << "DNI: ";
+            cin >> dni;
+            cout << "Contraseña: ";
+            cin >> pass;
             
-            // 2. DISTRIBUCIÓN POR ROLES (Común)
+            Usuario usuarioLogueado = db.login(dni, pass);
             
-            if (usuarioLogueado.rol == "COORDINADOR") {
+            if (usuarioLogueado.id == -1) {
 
-                mostrarMenuCoordinador(usuarioLogueado, db);
+                cout << "Error: DNI o Contraseña incorrectos. Intentalo de nuevo." << endl;
 
-            } else if (usuarioLogueado.rol == "TUTOR") {
+            } else {
 
-                mostrarMenuTutor(usuarioLogueado, db);
+                if (usuarioLogueado.rol == "COORDINADOR") {
 
-            } else if (usuarioLogueado.rol == "ALUMNO") {
+                    mostrarMenuCoordinador(usuarioLogueado, db);
 
-                mostrarMenuAlumno(usuarioLogueado, db);
+                } else if (usuarioLogueado.rol == "TUTOR") {
 
+                    mostrarMenuTutor(usuarioLogueado, db);
+
+                } else if (usuarioLogueado.rol == "ALUMNO") {
+
+                    mostrarMenuAlumno(usuarioLogueado, db);
+
+                }
             }
+
+        } else {
+
+            cout << "Opcion no valida." << endl;
+
         }
     }
 
     return 0;
 
 }
-

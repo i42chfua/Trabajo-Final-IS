@@ -32,10 +32,10 @@ public:
     bool asignarTutorAutomaticamente(int idAlumno);
     
     // Obtener lista de alumnos sin tutor asignado
-    vector<Usuario> getAlumnosSinTutor();
+    vector<Usuario> getAllAlumnos();
     
-    // Obtener lista de tutores disponibles (sin alumnos)
-    vector<Usuario> getTutoresDisponibles();
+    // Obtener lista de todos los tutores (libres y ocupados)
+    vector<Usuario> getAllTutores();
 
     // Asignar manualmente un alumno a un tutor
     bool asignarTutorManual(int idAlumno, int idTutor);

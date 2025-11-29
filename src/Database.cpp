@@ -135,10 +135,11 @@ string Database::getNombrePorID(int idUsuario) {
 
 }
 
-// Obtener vector de alumnos sin asignar
-vector<Usuario> Database::getAlumnosSinTutor() {
+// Obtener TODOS los alumnos (para ver si tienen tutor o no)
+vector<Usuario> Database::getAllAlumnos() {
     vector<Usuario> lista;
-    string sql = "SELECT ID, NOMBRE, DNI FROM USUARIOS WHERE ROL='ALUMNO' AND ID_VINCULADO=0;";
+    // Quitamos la restriccion ID_VINCULADO=0
+    string sql = "SELECT ID, NOMBRE, DNI, ID_VINCULADO FROM USUARIOS WHERE ROL='ALUMNO';";
     sqlite3_stmt* stmt;
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL) == SQLITE_OK) {
@@ -147,7 +148,7 @@ vector<Usuario> Database::getAlumnosSinTutor() {
             u.id = sqlite3_column_int(stmt, 0);
             u.nombre = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
             u.dni = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
-            // Los demas campos no son necesarios para mostrarlos en la lista
+            u.id_vinculado = sqlite3_column_int(stmt, 3); // Para saber si ya tienen tutor
             lista.push_back(u);
         }
     }
@@ -155,10 +156,11 @@ vector<Usuario> Database::getAlumnosSinTutor() {
     return lista;
 }
 
-// Obtener vector de tutores libres
-vector<Usuario> Database::getTutoresDisponibles() {
+//OBTENER TODOS LOS TUTORES (Libres y Ocupados)
+vector<Usuario> Database::getAllTutores() {
     vector<Usuario> lista;
-    string sql = "SELECT ID, NOMBRE, DNI FROM USUARIOS WHERE ROL='TUTOR' AND ID_VINCULADO=0;";
+    // Quitamos la condicion "AND ID_VINCULADO=0" para que salgan todos
+    string sql = "SELECT ID, NOMBRE, DNI, ID_VINCULADO FROM USUARIOS WHERE ROL='TUTOR';";
     sqlite3_stmt* stmt;
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL) == SQLITE_OK) {
@@ -167,6 +169,7 @@ vector<Usuario> Database::getTutoresDisponibles() {
             u.id = sqlite3_column_int(stmt, 0);
             u.nombre = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
             u.dni = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+            u.id_vinculado = sqlite3_column_int(stmt, 3); // Guardamos esto para mostrarlo en el menú
             lista.push_back(u);
         }
     }
@@ -174,18 +177,49 @@ vector<Usuario> Database::getTutoresDisponibles() {
     return lista;
 }
 
-// Realizar el UPDATE cruzado
+// 2. ASIGNAR TUTOR (Gestionando el reemplazo si ya tenía alumno)
 bool Database::asignarTutorManual(int idAlumno, int idTutor) {
-    // 1. Verificamos que existan y estén libres (opcional, pero recomendable)
-    // Por simplicidad y tiempo, confiamos en que los IDs vienen de las listas anteriores.
     
-    // Actualizamos al Alumno para que apunte al Tutor
+    // 1. GESTION DEL TUTOR DESTINO (idTutor)
+    // Comprobamos si el tutor nuevo ya tiene a alguien, para echar al alumno viejo
+    string sqlCheckTutor = "SELECT ID_VINCULADO FROM USUARIOS WHERE ID=" + to_string(idTutor) + ";";
+    sqlite3_stmt* stmtTutor;
+    int idAlumnoAntiguoDelTutor = 0;
+
+    if (sqlite3_prepare_v2(db, sqlCheckTutor.c_str(), -1, &stmtTutor, NULL) == SQLITE_OK) {
+        if (sqlite3_step(stmtTutor) == SQLITE_ROW) {
+            idAlumnoAntiguoDelTutor = sqlite3_column_int(stmtTutor, 0);
+        }
+    }
+    sqlite3_finalize(stmtTutor);
+
+    // Si el tutor tenia alumno, lo liberamos
+    if (idAlumnoAntiguoDelTutor != 0) {
+        ejecutarQuery("UPDATE USUARIOS SET ID_VINCULADO=0 WHERE ID=" + to_string(idAlumnoAntiguoDelTutor) + ";");
+    }
+
+    // 2. GESTION DEL ALUMNO (idAlumno)
+    // Comprobamos si el alumno ya tenia un tutor asignado, para liberar a ese tutor
+    string sqlCheckAlumno = "SELECT ID_VINCULADO FROM USUARIOS WHERE ID=" + to_string(idAlumno) + ";";
+    sqlite3_stmt* stmtAlumno;
+    int idTutorAntiguoDelAlumno = 0;
+
+    if (sqlite3_prepare_v2(db, sqlCheckAlumno.c_str(), -1, &stmtAlumno, NULL) == SQLITE_OK) {
+        if (sqlite3_step(stmtAlumno) == SQLITE_ROW) {
+            idTutorAntiguoDelAlumno = sqlite3_column_int(stmtAlumno, 0);
+        }
+    }
+    sqlite3_finalize(stmtAlumno);
+
+    // Si el alumno tenia tutor, liberamos al tutor antiguo
+    if (idTutorAntiguoDelAlumno != 0) {
+        ejecutarQuery("UPDATE USUARIOS SET ID_VINCULADO=0 WHERE ID=" + to_string(idTutorAntiguoDelAlumno) + ";");
+    }
+
+    // 3. VINCULACION FINAL (Cruzamos los IDs)
     string updateAlumno = "UPDATE USUARIOS SET ID_VINCULADO=" + to_string(idTutor) + " WHERE ID=" + to_string(idAlumno) + ";";
-    
-    // Actualizamos al Tutor para que apunte al Alumno
     string updateTutor = "UPDATE USUARIOS SET ID_VINCULADO=" + to_string(idAlumno) + " WHERE ID=" + to_string(idTutor) + ";";
 
-    // Ejecutamos ambas queries
     bool exitoAlumno = ejecutarQuery(updateAlumno);
     bool exitoTutor = ejecutarQuery(updateTutor);
 

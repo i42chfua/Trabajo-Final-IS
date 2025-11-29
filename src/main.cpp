@@ -19,51 +19,65 @@ void mostrarMenuCoordinador(Usuario& user, Database& db) {
         switch (opcion) {
 
             case 1: {
-                // Bloque entre llaves {} para poder declarar variables locales dentro del case
                 cout << "\n>> ASIGNACION MANUAL DE TUTORIAS" << endl;
 
-                // 1. Mostrar Alumnos sin tutor
-                vector<Usuario> alumnos = db.getAlumnosSinTutor();
+                // --- 1. LISTAR TODOS LOS ALUMNOS ---
+                vector<Usuario> alumnos = db.getAllAlumnos(); // Usamos la nueva funcion
+                
                 if (alumnos.empty()) {
-                    cout << "(!) No hay alumnos pendientes de asignar." << endl;
+                    cout << "(!) No hay alumnos registrados en el sistema." << endl;
                     break; 
                 }
 
-                cout << "\n--- Lista de Alumnos sin Tutor ---" << endl;
-                cout << "ID\t| DNI\t\t| Nombre" << endl;
-                cout << "----------------------------------------" << endl;
+                cout << "\n--- Lista de Alumnos ---" << endl;
+                cout << "ID\t| Nombre\t\t| Estado Actual" << endl;
+                cout << "------------------------------------------------" << endl;
                 for (Usuario& a : alumnos) {
-                    cout << a.id << "\t| " << a.dni << "\t| " << a.nombre << endl;
+                    cout << a.id << "\t| " << a.nombre << "\t| ";
+                    if (a.id_vinculado == 0) {
+                        cout << "(SIN TUTOR)" << endl;
+                    } else {
+                        // Opcional: ver nombre del tutor actual
+                        string nombreTutor = db.getNombrePorID(a.id_vinculado);
+                        cout << "(Tiene a: " << nombreTutor << ")" << endl;
+                    }
                 }
 
                 int idAlumnoSel;
                 cout << "\nSelecciona el ID del ALUMNO: ";
                 cin >> idAlumnoSel;
 
-                // 2. Mostrar Tutores disponibles
-                vector<Usuario> tutores = db.getTutoresDisponibles();
+                // --- 2. LISTAR TODOS LOS TUTORES ---
+                vector<Usuario> tutores = db.getAllTutores(); 
+                
                 if (tutores.empty()) {
-                    cout << "(!) No hay tutores disponibles en este momento." << endl;
+                    cout << "(!) No existen tutores registrados." << endl;
                     break;
                 }
 
-                cout << "\n--- Lista de Tutores Disponibles ---" << endl;
-                cout << "ID\t| DNI\t\t| Nombre" << endl;
-                cout << "----------------------------------------" << endl;
+                cout << "\n--- Lista de Tutores ---" << endl;
+                cout << "ID\t| Nombre\t\t| Estado Actual" << endl;
+                cout << "------------------------------------------------" << endl;
+                
                 for (Usuario& t : tutores) {
-                    cout << t.id << "\t| " << t.dni << "\t| " << t.nombre << endl;
+                    cout << t.id << "\t| " << t.nombre << "\t| ";
+                    if (t.id_vinculado == 0) {
+                        cout << "(LIBRE)" << endl;
+                    } else {
+                        string nombreAlumno = db.getNombrePorID(t.id_vinculado);
+                        cout << "(Ocupado con: " << nombreAlumno << ")" << endl;
+                    }
                 }
 
                 int idTutorSel;
-                cout << "\nSelecciona el ID del TUTOR: ";
+                cout << "\nSelecciona el ID del TUTOR a asignar: ";
                 cin >> idTutorSel;
 
-                // 3. Ejecutar la asignación
+                // --- 3. EJECUTAR CAMBIO ---
                 if (db.asignarTutorManual(idAlumnoSel, idTutorSel)) {
-                    cout << "\n[EXITO] Se ha vinculado al alumno (ID " << idAlumnoSel 
-                         << ") con el tutor (ID " << idTutorSel << ") correctamente." << endl;
+                    cout << "\n[EXITO] Asignacion completada." << endl;
                 } else {
-                    cout << "\n[ERROR] Hubo un problema al asignar la tutoria." << endl;
+                    cout << "\n[ERROR] Algo fallo en la base de datos." << endl;
                 }
 
                 break;

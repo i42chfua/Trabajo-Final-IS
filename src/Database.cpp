@@ -134,3 +134,60 @@ string Database::getNombrePorID(int idUsuario) {
     return nombreEncontrado;
 
 }
+
+// Obtener vector de alumnos sin asignar
+vector<Usuario> Database::getAlumnosSinTutor() {
+    vector<Usuario> lista;
+    string sql = "SELECT ID, NOMBRE, DNI FROM USUARIOS WHERE ROL='ALUMNO' AND ID_VINCULADO=0;";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            Usuario u;
+            u.id = sqlite3_column_int(stmt, 0);
+            u.nombre = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+            u.dni = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+            // Los demas campos no son necesarios para mostrarlos en la lista
+            lista.push_back(u);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return lista;
+}
+
+// Obtener vector de tutores libres
+vector<Usuario> Database::getTutoresDisponibles() {
+    vector<Usuario> lista;
+    string sql = "SELECT ID, NOMBRE, DNI FROM USUARIOS WHERE ROL='TUTOR' AND ID_VINCULADO=0;";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            Usuario u;
+            u.id = sqlite3_column_int(stmt, 0);
+            u.nombre = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+            u.dni = string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+            lista.push_back(u);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return lista;
+}
+
+// Realizar el UPDATE cruzado
+bool Database::asignarTutorManual(int idAlumno, int idTutor) {
+    // 1. Verificamos que existan y estén libres (opcional, pero recomendable)
+    // Por simplicidad y tiempo, confiamos en que los IDs vienen de las listas anteriores.
+    
+    // Actualizamos al Alumno para que apunte al Tutor
+    string updateAlumno = "UPDATE USUARIOS SET ID_VINCULADO=" + to_string(idTutor) + " WHERE ID=" + to_string(idAlumno) + ";";
+    
+    // Actualizamos al Tutor para que apunte al Alumno
+    string updateTutor = "UPDATE USUARIOS SET ID_VINCULADO=" + to_string(idAlumno) + " WHERE ID=" + to_string(idTutor) + ";";
+
+    // Ejecutamos ambas queries
+    bool exitoAlumno = ejecutarQuery(updateAlumno);
+    bool exitoTutor = ejecutarQuery(updateTutor);
+
+    return exitoAlumno && exitoTutor;
+}

@@ -6,11 +6,9 @@
 using namespace std;
 
 void mostrarMenuCoordinador(Usuario& user, Database& db) {
-    // Menu de coordinador
     int opcion = 0;
 
     do {
-
         cout << "\n--- MENU COORDINADOR (" << user.nombre << ") ---" << endl;
         cout << "1. Asignar Tutor manualmente" << endl;
         cout << "2. Volver (Cerrar Sesion)" << endl;
@@ -20,14 +18,60 @@ void mostrarMenuCoordinador(Usuario& user, Database& db) {
         
         switch (opcion) {
 
-            case 1:
-                cout << ">> Logica Asignar Tutor" << endl;
+            case 1: {
+                // Bloque entre llaves {} para poder declarar variables locales dentro del case
+                cout << "\n>> ASIGNACION MANUAL DE TUTORIAS" << endl;
+
+                // 1. Mostrar Alumnos sin tutor
+                vector<Usuario> alumnos = db.getAlumnosSinTutor();
+                if (alumnos.empty()) {
+                    cout << "(!) No hay alumnos pendientes de asignar." << endl;
+                    break; 
+                }
+
+                cout << "\n--- Lista de Alumnos sin Tutor ---" << endl;
+                cout << "ID\t| DNI\t\t| Nombre" << endl;
+                cout << "----------------------------------------" << endl;
+                for (Usuario& a : alumnos) {
+                    cout << a.id << "\t| " << a.dni << "\t| " << a.nombre << endl;
+                }
+
+                int idAlumnoSel;
+                cout << "\nSelecciona el ID del ALUMNO: ";
+                cin >> idAlumnoSel;
+
+                // 2. Mostrar Tutores disponibles
+                vector<Usuario> tutores = db.getTutoresDisponibles();
+                if (tutores.empty()) {
+                    cout << "(!) No hay tutores disponibles en este momento." << endl;
+                    break;
+                }
+
+                cout << "\n--- Lista de Tutores Disponibles ---" << endl;
+                cout << "ID\t| DNI\t\t| Nombre" << endl;
+                cout << "----------------------------------------" << endl;
+                for (Usuario& t : tutores) {
+                    cout << t.id << "\t| " << t.dni << "\t| " << t.nombre << endl;
+                }
+
+                int idTutorSel;
+                cout << "\nSelecciona el ID del TUTOR: ";
+                cin >> idTutorSel;
+
+                // 3. Ejecutar la asignación
+                if (db.asignarTutorManual(idAlumnoSel, idTutorSel)) {
+                    cout << "\n[EXITO] Se ha vinculado al alumno (ID " << idAlumnoSel 
+                         << ") con el tutor (ID " << idTutorSel << ") correctamente." << endl;
+                } else {
+                    cout << "\n[ERROR] Hubo un problema al asignar la tutoria." << endl;
+                }
+
                 break;
+            }
 
             case 2: break;
 
             default: cout << "Opcion no valida." << endl;
-
         }
 
     } while (opcion != 2);

@@ -31,6 +31,15 @@ public:
     // Asignacion automatica de tutor a alumno
     bool asignarTutorAutomaticamente(int idAlumno);
     
+    // Obtener lista de alumnos sin tutor asignado
+    vector<Usuario> getAlumnosSinTutor();
+    
+    // Obtener lista de tutores disponibles (sin alumnos)
+    vector<Usuario> getTutoresDisponibles();
+
+    // Asignar manualmente un alumno a un tutor
+    bool asignarTutorManual(int idAlumno, int idTutor);
+    
     // Funcion para poder ver el nombre de la persona que tutorizas o que te tutoriza
     string getNombrePorID(int idUsuario);   
 

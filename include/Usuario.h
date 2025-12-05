@@ -4,17 +4,15 @@
 #include <string>
 #include <iostream>
 
-using namespace std;
-
 class Usuario {
 
     public:
 
         int id;
-        string nombre;
-        string dni;
-        string password; 
-        string rol;      
+        std::string nombre;
+        std::string dni;
+        std::string password; 
+        std::string rol;      
         int id_vinculado; 
 
         // Constructor inicial
@@ -24,7 +22,7 @@ class Usuario {
         }
 
         // Constructor 
-        Usuario(int _id, string _nombre, string _dni, string _pass, string _rol, int _id_vinculado) {
+        Usuario(int _id, std::string _nombre, std::string _dni, std::string _pass, std::string _rol, int _id_vinculado) {
             id = _id;
             nombre = _nombre;
             dni = _dni;

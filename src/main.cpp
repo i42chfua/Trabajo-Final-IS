@@ -2,38 +2,114 @@
 #include <limits> 
 #include <vector>
 #include <string>
+#include <iomanip> 
 
 #include "../include/Database.h"
 #include "../include/Usuario.h"
 
 using namespace std;
 
+
+void limpiarPantalla() {
+    // Imprime 50 saltos de línea para "limpiar" la terminal visualmente
+    cout << string(50, '\n'); 
+}
+
+void pausa() {
+    cout << "\n>> Pulsa ENTER para continuar...";
+    // Limpieza robusta del buffer para que funcione la pausa
+    if (cin.peek() == '\n') cin.ignore();
+    cin.get();
+}
+
+// Modulos de interfaz visual
+void printHeader(string titulo) {
+    cout << "\n========================================================" << endl;
+    int espacios = (56 - titulo.length()) / 2;
+    if (espacios > 0) cout << string(espacios, ' ');
+    cout << titulo << endl;
+    cout << "========================================================" << endl;
+}
+
+void printLinea() {
+    cout << "--------------------------------------------------------" << endl;
+}
+
+// --- FUNCIÓN AUXILIAR PARA ALERTAS ---
+void comprobarAlertas(Usuario& user, Database& db) {
+    vector<Alerta> alertas = db.obtenerAlertasPendientes(user.id);
+    
+    if (!alertas.empty()) {
+        limpiarPantalla(); // Limpiamos para que la alerta sea lo único visible
+        cout << "\n   /!\\ TIENES " << alertas.size() << " NUEVA(S) ALERTA(S) /!\\   " << endl;
+        
+        // Interfaz de alertas
+        for (auto& a : alertas) {
+            cout << "+" << string(54, '-') << "+" << endl;
+            cout << "| DE: " << left << setw(48) << a.nombreEmisor << " |" << endl;
+            cout << "| FECHA: " << left << setw(45) << a.fecha << " |" << endl;
+            cout << "|" << string(54, '-') << "|" << endl;
+            cout << "| MENSAJE:                                             |" << endl;
+            cout << "| " << left << setw(52) << a.contenido << " |" << endl;
+            cout << "+" << string(54, '-') << "+" << endl;
+        }
+        
+        db.marcarAlertasComoLeidas(user.id);
+        pausa(); // Esperamos a que el usuario lea antes de borrar
+    }
+}
+
+// Historial de alertas recibidas
+void verHistorialAlertas(Usuario& user, Database& db) {
+    limpiarPantalla();
+    vector<Alerta> historial = db.getHistorialAlertas(user.id);
+    printHeader("HISTORIAL DE ALERTAS RECIBIDAS");
+    
+    if (historial.empty()) {
+        cout << "\n(El historial esta vacio)" << endl;
+    } else {
+        for(auto& a : historial) {
+            cout << " [" << a.fecha << "] De: " << a.nombreEmisor;
+            if (a.leida == 0) cout << " (NUEVA)";
+            cout << "\n >> " << a.contenido << endl;
+            printLinea();
+        }
+    }
+    pausa();
+}
+
 // --- FUNCIÓN DE CHAT ---
 void pantallaDeChat(Usuario& yo, int idOtroUsuario, Database& db) {
+
+    // Input del chat
     string input;
+    // Nombre del tutor o alumno asignado respectivamente
     string nombreOtro = db.getNombrePorID(idOtroUsuario);
 
     while (true) {
-        cout << string(50, '\n'); // "Limpiar" pantalla simulado
-        
-        cout << "========================================" << endl;
-        cout << "   CHAT CON: " << nombreOtro << endl;
-        cout << "========================================" << endl;
+        limpiarPantalla(); // Limpiamos en cada mensaje nuevo para efecto de "refresco"
+        printHeader("CHAT CON: " + nombreOtro);
 
         vector<Mensaje> historial = db.getHistorialChat(yo.id, idOtroUsuario);
         
+        cout << endl;
         if (historial.empty()) {
-            cout << "  (No hay mensajes previos. Di hola!)" << endl;
+            cout << "       (No hay mensajes previos. Saluda!)" << endl;
         } else {
             for (Mensaje m : historial) {
-                // Formato: [Fecha] Emisor: Mensaje
-                cout << "[" << m.fecha << "] " << m.nombreEmisor << ": " << m.contenido << endl;
+                if (m.nombreEmisor == yo.nombre) {
+                    cout << right << setw(55) << ("(Yo) " + m.contenido) << endl;
+                    cout << right << setw(55) << ("[" + m.fecha + "]") << endl;
+                } else {
+                    cout << left <<  m.nombreEmisor << ": " << m.contenido << endl;
+                    cout << left << " [" << m.fecha << "]" << endl;
+                }
+                cout << endl; 
             }
         }
-        cout << "========================================" << endl;
-        cout << "[Escribe tu mensaje y pulsa ENTER]" << endl;
-        cout << "[Escribe 'SALIR' para volver]" << endl;
-        cout << "> ";
+
+        printLinea();
+        cout << "[Escribe mensaje] o [SALIR]: ";
 
         getline(cin, input);
 
@@ -50,203 +126,270 @@ void pantallaDeChat(Usuario& yo, int idOtroUsuario, Database& db) {
 void mostrarMenuCoordinador(Usuario& user, Database& db) {
     int opcion = 0;
     do {
-        cout << "\n--- MENU COORDINADOR (" << user.nombre << ") ---" << endl;
-        cout << "1. Asignar Tutor manualmente" << endl;
-        cout << "2. Volver (Cerrar Sesion)" << endl;
-        cout << "Opcion: ";
+        // Limpiamos menu al entrar
+        limpiarPantalla(); 
+        // Interfaz
+        printHeader("PANEL DE COORDINACION: " + user.nombre);
+        cout << " 1. Asignar Tutor manualmente" << endl;
+        cout << " 2. Ver Metricas (Tutor o Alumno)" << endl;
+        cout << " 3. Cerrar Sesion" << endl;
+        printLinea();
+        cout << " > Elige opcion: ";
         
-        if (!(cin >> opcion)) { 
-            cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
-            cout << "Entrada invalida." << endl; continue; 
-        }
+        if (!(cin >> opcion)) { cin.clear(); cin.ignore(10000, '\n'); continue; }
 
         if (opcion == 1) {
-             cout << "\n>> ASIGNACION MANUAL DE TUTORIAS" << endl;
+             limpiarPantalla();
+             printHeader("ASIGNACION MANUAL");
 
-             // --- 1. LISTAR ALUMNOS ---
+             // Listar Alumnos
              vector<Usuario> alumnos = db.getAllAlumnos();
-             if (alumnos.empty()) { cout << "(!) No hay alumnos registrados." << endl; continue; }
+             if (alumnos.empty()) { cout << "(!) No hay alumnos registrados." << endl; pausa(); continue; }
 
-             cout << "\n--- LISTA DE ALUMNOS ---" << endl;
-             cout << "ID\t| Nombre\t\t\t| Estado Actual" << endl;
-             cout << "----------------------------------------------------------------" << endl;
+             cout << left << setw(5) << "ID" << "| " << setw(25) << "NOMBRE ALUMNO" << "| ESTADO" << endl;
+             printLinea();
              for(auto& a : alumnos) {
-                 cout << a.id << "\t| " << a.nombre << "\t| ";
-                 if (a.id_vinculado == 0) cout << "(SIN TUTOR)" << endl;
-                 else cout << "(Tutor: " << db.getNombrePorID(a.id_vinculado) << ")" << endl;
+                 string estado = (a.id_vinculado == 0) ? "SIN TUTOR" : ("Con: " + db.getNombrePorID(a.id_vinculado));
+                 cout << left << setw(5) << a.id << "| " << setw(25) << a.nombre << "| " << estado << endl;
              }
-             
-             // --- 2. LISTAR TUTORES ---
+             cout << endl; 
+
+             // Listar Tutores
              vector<Usuario> tutores = db.getAllTutores();
-             if (tutores.empty()) { cout << "(!) No hay tutores registrados." << endl; continue; }
+             if (tutores.empty()) { cout << "(!) No hay tutores registrados." << endl; pausa(); continue; }
 
-             cout << "\n--- LISTA DE TUTORES ---" << endl;
-             cout << "ID\t| Nombre\t\t\t| Estado Actual" << endl;
-             cout << "----------------------------------------------------------------" << endl;
+             cout << left << setw(5) << "ID" << "| " << setw(25) << "NOMBRE TUTOR" << "| ESTADO" << endl;
+             printLinea();
              for(auto& t : tutores) {
-                 cout << t.id << "\t| " << t.nombre << "\t| ";
-                 if (t.id_vinculado == 0) cout << "(LIBRE)" << endl;
-                 else cout << "(Alumno: " << db.getNombrePorID(t.id_vinculado) << ")" << endl;
+                 string estado = (t.id_vinculado == 0) ? "LIBRE" : ("Ocupado (" + db.getNombrePorID(t.id_vinculado) + ")");
+                 cout << left << setw(5) << t.id << "| " << setw(25) << t.nombre << "| " << estado << endl;
              }
 
-             // --- 3. PEDIR DATOS (MODIFICADO PARA 'SALIR') ---
+             // Pedir IDs
              string entradaID;
              int idA = -1, idT = -1;
 
-             // Bucle para pedir ID Alumno
-             while (true) {
-                 cout << "\nIntroduce ID del Alumno a asignar (o escribe SALIR): ";
-                 cin >> entradaID;
-                 
-                 if (entradaID == "SALIR" || entradaID == "salir") break; // Rompe el while interno
-                 
-                 try {
-                     idA = stoi(entradaID); // Intentamos convertir texto a numero
-                     break; // Si funciona, salimos del bucle de pedir
-                 } catch (...) {
-                     cout << "(!) Error: Introduce un numero valido o SALIR." << endl;
-                 }
-             }
+             cout << "\n[Escribe 'SALIR' para cancelar]" << endl;
              
-             if (entradaID == "SALIR" || entradaID == "salir") continue; // Vuelve al menú principal
-
-             // Bucle para pedir ID Tutor
              while (true) {
-                 cout << "Introduce ID del Tutor a asignar (o escribe SALIR): ";
-                 cin >> entradaID;
-                 
+                 cout << ">> Introduce ID del ALUMNO: "; cin >> entradaID;
                  if (entradaID == "SALIR" || entradaID == "salir") break;
-                 
-                 try {
-                     idT = stoi(entradaID);
-                     break;
-                 } catch (...) {
-                     cout << "(!) Error: Introduce un numero valido o SALIR." << endl;
-                 }
+                 try { idA = stoi(entradaID); break; } catch (...) { cout << "Numero invalido." << endl; }
              }
+             if (entradaID == "SALIR" || entradaID == "salir") continue;
 
-             if (entradaID == "SALIR" || entradaID == "salir") continue; // Vuelve al menú principal
-             
-             // Ejecución final
-             if(db.asignarTutorManual(idA, idT)){
-                 cout << "\n[EXITO] Asignacion completada correctamente." << endl;
-             } else {
-                 cout << "\n[ERROR] Algo fallo (revisa si los IDs existen)." << endl;
+             while (true) {
+                 cout << ">> Introduce ID del TUTOR: "; cin >> entradaID;
+                 if (entradaID == "SALIR" || entradaID == "salir") break;
+                 try { idT = stoi(entradaID); break; } catch (...) { cout << "Numero invalido." << endl; }
              }
+             if (entradaID == "SALIR" || entradaID == "salir") continue;
+             
+             if(db.asignarTutorManual(idA, idT)) cout << "\n[OK] Asignacion completada con exito." << endl;
+             else cout << "\n[ERROR] Fallo en la operacion. Revisa los IDs." << endl;
+             
+             pausa(); // Pausa para leer el resultado antes de limpiar
+        }
+        else if (opcion == 2) {
+            // Limpiamos antes de entrar al menu
+            limpiarPantalla();
+            printHeader("CONSULTA DE METRICAS");
+            
+            int subopcion;
+            cout << " 1. Ver metricas de un TUTOR\n 2. Ver metricas de un ALUMNO\n > ";
+            if(cin >> subopcion) {
+                vector<Usuario> lista;
+                if(subopcion == 1) lista = db.getAllTutores();
+                else if(subopcion == 2) lista = db.getAllAlumnos();
+                else { cout << "Opcion no valida." << endl; pausa(); continue; }
+
+                cout << endl;
+                cout << left << setw(5) << "ID" << "| " << "NOMBRE" << endl;
+                printLinea();
+                for(auto& u : lista) cout << left << setw(5) << u.id << "| " << u.nombre << endl;
+                printLinea();
+
+                int idSel;
+                cout << ">> Introduce ID para ver detalles: ";
+                if(cin >> idSel) {
+                    string nombreSel = db.getNombrePorID(idSel);
+                    if(nombreSel == "Desconocido") cout << "Usuario no encontrado." << endl;
+                    else {
+                        limpiarPantalla();
+                        printHeader("METRICAS: " + nombreSel);
+                        cout << " + Alertas Enviadas:   " << db.getNumAlertasEnviadas(idSel) << endl;
+                        cout << " + Alertas Recibidas:  " << db.getNumAlertasRecibidas(idSel) << endl;
+                        
+                        bool activo = db.tieneChatActivo(idSel);
+                        cout << " + Estado del Chat:    " << (activo ? "[ ACTIVO ]" : "[ INACTIVO ]") << endl;
+                        printLinea();
+                        pausa();
+                    }
+                } else { cin.clear(); cin.ignore(10000, '\n'); }
+                // Agregamos lineas para limpiar los menus anteriores
+            } else { cin.clear(); cin.ignore(10000, '\n'); }
         }
 
-    } while (opcion != 2);
+    } while (opcion != 3);
 }
 
+// Menu del tutor
 void mostrarMenuTutor(Usuario& user, Database& db) {
     int opcion = 0;
     do {
-        cout << "\n--- MENU TUTOR (" << user.nombre << ") ---" << endl;
+        comprobarAlertas(user, db); 
+        
+        limpiarPantalla(); 
+        // Limpiamos pantalla antes de entrar al menu
+        printHeader("AREA DEL TUTOR: " + user.nombre);
         
         if (user.id_vinculado == 0) {
-            cout << "(!) AVISO: Actualmente no tienes ningun alumno asignado." << endl;
+            cout << " [!] ESTADO: No tienes alumno asignado." << endl;
+            cout << "     (Espera a que te asigne el coordinador)" << endl;
         } else {
             string nombreAlumno = db.getNombrePorID(user.id_vinculado);
-            cout << "--> Estas tutorizando al alumno: " << nombreAlumno << endl;
-            cout << "1. Abrir Chat con " << nombreAlumno << endl;
+            cout << " [OK] ALUMNO ASIGNADO: " << nombreAlumno << endl;
+            printLinea();
+            cout << " 1. Abrir Chat con " << nombreAlumno << endl;
+            cout << " 2. Enviar ALERTA (Aviso Urgente)" << endl;
+            cout << " 3. Cerrar/Reiniciar Chat" << endl;
         }
-
-        cout << "2. Cerrar Sesion" << endl;
-        cout << "Opcion: ";
+        cout << " 4. Ver Historial de Alertas Recibidas" << endl;
+        cout << " 5. Cerrar Sesion" << endl;
+        printLinea();
+        cout << " > Elige opcion: ";
         
         if (!(cin >> opcion)) { cin.clear(); cin.ignore(10000, '\n'); continue; }
-        
-        cin.ignore(); // Limpiar buffer antes de entrar al chat
 
-        if (opcion == 1 && user.id_vinculado != 0) {
-             pantallaDeChat(user, user.id_vinculado, db);
+        if (user.id_vinculado != 0) {
+            if (opcion == 1) {
+                pantallaDeChat(user, user.id_vinculado, db);
+            } 
+            else if (opcion == 2) {
+                string contenido;
+                cout << "\n>> Escribe la ALERTA para el alumno: ";
+                if(cin.peek()=='\n') cin.ignore();
+                getline(cin, contenido);
+                if(!contenido.empty() && db.enviarAlerta(user.id, user.id_vinculado, contenido)) {
+                    cout << "   [OK] Alerta enviada correctamente." << endl;
+                    pausa();
+                }
+            }
+            else if (opcion == 3) {
+                char confirm;
+                cout << "\n[PELIGRO] ¿Borrar todo el historial de chat? (s/n): "; cin >> confirm;
+                if(confirm == 's' || confirm == 'S') {
+                    if(db.borrarChat(user.id, user.id_vinculado)) {
+                        cout << "   [OK] Chat reiniciado." << endl;
+                        pausa();
+                    }
+                }
+            }
         }
+        if (opcion == 4) verHistorialAlertas(user, db);
 
-    } while (opcion != 2);
+    } while (opcion != 5);
 }
 
+// Menu de alumno
 void mostrarMenuAlumno(Usuario& user, Database& db) {
     int opcion = 0;
     do {
-        cout << "\n--- MENU ALUMNO (" << user.nombre << ") ---" << endl;
-        
-        // Auto-asignación al entrar
         if (user.id_vinculado == 0) {
-            if (db.asignarTutorAutomaticamente(user.id)) {
-                cout << "INFO! Se te ha asignado tutor automaticamente." << endl;
-                user = db.login(user.dni, user.password); // Recargar datos
-            } else {
-                cout << "(!) Buscando tutor... (No hay disponibles aun)" << endl;
-            }
+            // Asignacion automatica si no tiene tutor al iniciar sesion
+            if (db.asignarTutorAutomaticamente(user.id)) user = db.login(user.dni, user.password);
         }
+        
+        comprobarAlertas(user, db);
+
+        // Limpiamos antes de entrar al menu
+        limpiarPantalla();
+        printHeader("AREA DEL ALUMNO: " + user.nombre);
         
         if (user.id_vinculado != 0) {
             string nombreTutor = db.getNombrePorID(user.id_vinculado);
-            cout << "--> Tu tutor asignado es: " << nombreTutor << endl;
-            cout << "1. Abrir Chat con " << nombreTutor << endl;
+            cout << " [OK] TUTOR ASIGNADO: " << nombreTutor << endl;
+            printLinea();
+            cout << " 1. Abrir Chat con " << nombreTutor << endl;
+            cout << " 2. Enviar ALERTA (Aviso Urgente)" << endl;
+        } else {
+            cout << " [!] ESTADO: Buscando tutor disponible..." << endl;
         }
-
-        cout << "2. Cerrar Sesion" << endl;
-        cout << "Opcion: ";
+        cout << " 3. Ver Historial de Alertas Recibidas" << endl;
+        cout << " 4. Cerrar Sesion" << endl;
+        printLinea();
+        cout << " > Elige opcion: ";
         
         if (!(cin >> opcion)) { cin.clear(); cin.ignore(10000, '\n'); continue; }
-        
-        cin.ignore(); // Limpiar buffer antes de entrar al chat
 
-        if (opcion == 1 && user.id_vinculado != 0) {
-             pantallaDeChat(user, user.id_vinculado, db);
+        if (user.id_vinculado != 0) {
+            if (opcion == 1) pantallaDeChat(user, user.id_vinculado, db);
+            else if (opcion == 2) {
+                string contenido;
+                cout << "\n>> Escribe la ALERTA para el tutor: ";
+                if(cin.peek()=='\n') cin.ignore();
+                getline(cin, contenido);
+                if(!contenido.empty() && db.enviarAlerta(user.id, user.id_vinculado, contenido)) {
+                    cout << "   [OK] Alerta enviada correctamente." << endl;
+                    pausa();
+                }
+            }
         }
+        if (opcion == 3) verHistorialAlertas(user, db);
 
-    } while (opcion != 2);
+    } while (opcion != 4);
 }
 
 void realizarRegistro(Database& db) {
+    limpiarPantalla();
     string nombre, dni, pass, rol, token;
     int opcionRol;
     
-    cout << "\n--- REGISTRO DE NUEVO USUARIO ---" << endl;
+    printHeader("REGISTRO DE NUEVO USUARIO");
     
-    cin.ignore(); // Limpiar el Enter del menú anterior
+    if (cin.peek() == '\n') cin.ignore(); 
     
-    cout << "Nombre completo: ";
-    getline(cin, nombre); 
+    cout << " > Nombre completo: "; getline(cin, nombre); 
+    cout << " > DNI: "; cin >> dni;
+    cout << " > Contraseña: "; cin >> pass;
     
-    cout << "DNI: "; cin >> dni;
-    cout << "Contraseña: "; cin >> pass;
-    
-    cout << "Selecciona el Rol:\n1. ALUMNO\n2. TUTOR\n3. COORDINADOR\n> ";
+    cout << "\n--- Selecciona tu Rol ---" << endl;
+    cout << " 1. ALUMNO" << endl;
+    cout << " 2. TUTOR" << endl;
+    cout << " 3. COORDINADOR" << endl;
+    cout << " > Opcion: ";
     if (!(cin >> opcionRol)) { cin.clear(); cin.ignore(10000, '\n'); return; }
     
     if (opcionRol == 1) {
         rol = "ALUMNO";
     } 
     else if (opcionRol == 2) {
-        cout << "Introduce el codigo de autorizacion para TUTORES: ";
-        cin >> token;
+        cout << " > Token de seguridad (TUTOR): "; cin >> token;
         if (token == "tutoresUCO") rol = "TUTOR"; 
-        else { cout << "Codigo incorrecto." << endl; return; }
+        else { cout << " [X] Token incorrecto." << endl; pausa(); return; }
     }
     else if (opcionRol == 3) {
-        cout << "Introduce el codigo de autorizacion para COORDINADORES: ";
-        cin >> token;
+        cout << " > Token de seguridad (COORD): "; cin >> token;
         if (token == "coordinadoresUCO") rol = "COORDINADOR"; 
-        else { cout << "Codigo incorrecto." << endl; return; }
+        else { cout << " [X] Token incorrecto." << endl; pausa(); return; }
     } else {
-        cout << "Rol no valido." << endl;
+        cout << " [X] Rol no valido." << endl;
+        pausa();
         return;
     }
 
     Usuario nuevo(0, nombre, dni, pass, rol, 0);
     
     if(db.registrarUsuario(nuevo)){
-        cout << "¡Registro exitoso! Ya puedes iniciar sesion." << endl;
+        cout << "\n [OK] ¡Registro exitoso! Ya puedes iniciar sesion." << endl;
         if(rol == "ALUMNO") {
              Usuario temp = db.login(dni, pass);
              db.asignarTutorAutomaticamente(temp.id);
         }
     } else {
-        cout << "Error: Es posible que el DNI ya exista." << endl;
+        cout << "\n [X] Error: Es posible que el DNI ya exista." << endl;
     }
+    pausa();
 }
 
 int main() {
@@ -254,22 +397,28 @@ int main() {
     int opcionInicio = 0;
     
     while (true) {
-        cout << "\n=======================================" << endl;
-        cout << "   BIENVENIDO AL GESTOR DE TUTORIAS    " << endl;
-        cout << "=======================================" << endl;
-        cout << "1. Iniciar Sesion" << endl;
-        cout << "2. Registrarse" << endl;
-        cout << "3. Salir del programa" << endl;
-        cout << "Elige una opcion: ";
+        limpiarPantalla(); 
+        // MENÚ PRINCIPAL
+        cout << "\n========================================================" << endl;
+        cout << "          SISTEMA DE GESTION DE TUTORIAS UCO            " << endl;
+        cout << "========================================================" << endl;
+        cout << " 1. Iniciar Sesion" << endl;
+        cout << " 2. Registrarse" << endl;
+        cout << " 3. Salir del programa" << endl;
+        printLinea();
+        cout << " > Elige una opcion: ";
         
         if (!(cin >> opcionInicio)) { 
             cin.clear(); 
             cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
-            cout << "Entrada no valida." << endl; 
+            cout << " [X] Entrada no valida." << endl; 
             continue; 
         }
         
-        if (opcionInicio == 3) break;
+        if (opcionInicio == 3) {
+            cout << "\nCerrando sistema... Hasta luego." << endl;
+            break;
+        }
         
         if (opcionInicio == 2) {
             realizarRegistro(db);
@@ -277,21 +426,24 @@ int main() {
         else if (opcionInicio == 1) {
             string dni, pass;
             cout << "\n--- INICIO DE SESION ---" << endl;
-            cout << "DNI: "; cin >> dni;
-            cout << "Contraseña: "; cin >> pass;
+            cout << " > DNI: "; cin >> dni;
+            cout << " > Contraseña: "; cin >> pass;
             
             Usuario u = db.login(dni, pass);
             
             if (u.id != -1) {
-                cout << "Bienvenido, " << u.nombre << endl;
+                cout << "\n [OK] Acceso correcto. Bienvenido " << u.nombre << "." << endl;
+                pausa(); // Pausa breve para ver que el login fue bien
                 if (u.rol == "COORDINADOR") mostrarMenuCoordinador(u, db);
                 else if (u.rol == "TUTOR") mostrarMenuTutor(u, db);
                 else if (u.rol == "ALUMNO") mostrarMenuAlumno(u, db);
             } else {
-                cout << "Error: DNI o Contraseña incorrectos." << endl;
+                cout << "\n [X] Error: DNI o Contraseña incorrectos." << endl;
+                pausa();
             }
         } else {
-            cout << "Opcion no valida." << endl;
+            cout << " [X] Opcion no valida." << endl;
+            pausa();
         }
     }
     return 0;

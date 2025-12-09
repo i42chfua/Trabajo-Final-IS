@@ -1,0 +1,26 @@
+# --- Directorios de Visual Studio y Compilación ---
+.vs/
+x64/
+Debug/
+Release/
+packages/
+
+# --- Archivos de Usuario y Configuración Local ---
+*.user
+*.suo
+*.opensdf
+*.sdf
+
+# --- Archivos Generados (Binarios y Temporales) ---
+*.exe
+*.dll
+*.obj
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.idb
+
+# --- SQLite Temporales ---
+*.db-shm
+*.db-wal

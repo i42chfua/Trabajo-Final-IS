@@ -89,3 +89,49 @@ TEST_F(TestTutorias, ReasignacionManual) {
     EXPECT_EQ(alumno.id_vinculado, idT2);
     EXPECT_EQ(tutor1.id_vinculado, 0);
 }
+
+// Prueba 5: Chat
+TEST_F(TestTutorias, HistorialChat) {
+    Database db("test_tutorias.db");
+
+    db.registrarUsuario(Usuario(0, "U1", "1", "p", "TUTOR", 0));
+    db.registrarUsuario(Usuario(0, "U2", "2", "p", "ALUMNO", 0));
+    int id1 = db.login("1", "p").id;
+    int id2 = db.login("2", "p").id;
+
+    db.enviarMensaje(id1, id2, "Mensaje de Prueba GoogleTest");
+
+    vector<Mensaje> historial = db.getHistorialChat(id1, id2);
+
+    ASSERT_FALSE(historial.empty());
+    EXPECT_EQ(historial[0].contenido, "Mensaje de Prueba GoogleTest");
+}
+
+// Prueba 6: Alertas 
+TEST_F(TestTutorias, FlujoAlertas) {
+    Database db("test_tutorias.db");
+
+    // 1. Crear usuarios reales para que existan en la BD
+    db.registrarUsuario(Usuario(0, "EmisorTest", "E1", "p", "TUTOR", 0));
+    db.registrarUsuario(Usuario(0, "ReceptorTest", "R1", "p", "ALUMNO", 0));
+
+    // 2. Obtener sus IDs autogenerados por SQLite
+    int idEmisor = db.login("E1", "p").id;
+    int idReceptor = db.login("R1", "p").id;
+
+    // 3. Enviar Alerta
+    db.enviarAlerta(idEmisor, idReceptor, "Alerta GTest");
+
+    // 4. Verificar pendiente
+    vector<Alerta> pendientes = db.obtenerAlertasPendientes(idReceptor);
+    ASSERT_FALSE(pendientes.empty()); // Usamos ASSERT para no seguir si falla
+    EXPECT_EQ(pendientes.size(), 1);
+    EXPECT_EQ(pendientes[0].contenido, "Alerta GTest");
+
+    // 5. Marcar leída
+    db.marcarAlertasComoLeidas(idReceptor);
+
+    // 6. Verificar vacía
+    pendientes = db.obtenerAlertasPendientes(idReceptor);
+    EXPECT_EQ(pendientes.size(), 0);
+}

@@ -24,3 +24,6 @@ packages/
 # --- SQLite Temporales ---
 *.db-shm
 *.db-wal
+
+#--- Base de datos Pruebas---
+test_tutorias.db

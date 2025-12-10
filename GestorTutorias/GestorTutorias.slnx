@@ -3,6 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="../PruebasUnitarias/PruebasUnitarias.vcxproj" />
-  <Project Path="GestorTutorias.vcxproj" />
+  <Project Path="../PruebasUnitarias/PruebasUnitarias.vcxproj" Id="916e762a-f12e-4f9a-aca5-5da1a027dc93" />
+  <Project Path="GestorTutorias.vcxproj" Id="5270d4a9-fd99-4fef-907d-983258b32668" />
 </Solution>

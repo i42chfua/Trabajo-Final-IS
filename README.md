@@ -1,22 +1,22 @@
 # Gestor de Tutorías
 
-Bienvenido al repositorio oficial del proyecto **GestorTutorias**. [cite_start]Este sistema ha sido desarrollado como parte de la asignatura de Ingeniería del Software (Curso 2025/26) [cite: 5][cite_start], siguiendo la metodología Scrum[cite: 18].
+Bienvenido al repositorio oficial del proyecto **GestorTutorias**. Este sistema ha sido desarrollado como parte de la asignatura de Ingeniería del Software (Curso 2025/26), siguiendo la metodología Scrum.
 
 ## 📋 Descripción del Proyecto
-El objetivo de este software es gestionar el sistema de tutorías, permitiendo [Añade aquí una frase corta sobre qué hace tu programa, ej: reservar citas, gestionar alumnos, etc.].
+El objetivo de este software es gestionar el sistema de tutorías, permitiendo.
 
 El proyecto está dividido en dos componentes principales:
 1. **GestorTutorias:** La aplicación principal (Consola/Interfaz).
-2. [cite_start]**PruebasUnitarias:** Módulo de testing para validar la lógica del negocio[cite: 396].
+2. **PruebasUnitarias:** Módulo de testing para validar la lógica del negocio.
 
 ## 🚀 Instalación y Configuración
 
 ### Requisitos Previos
 * **IDE Recomendado:** Visual Studio 2022 (con soporte para C++).
-* [cite_start]**Sistema de Control de Versiones:** Git[cite: 807].
+* **Sistema de Control de Versiones:** Git.
 
 ### Descarga del Repositorio
-[cite_start]Para obtener el código fuente, clona el repositorio utilizando el siguiente comando en tu terminal[cite: 1469]:
+Para obtener el código fuente, clona el repositorio utilizando el siguiente comando en tu terminal:
 
 ```bash
 git clone https://github.com/i42chfua/Trabajo-Final-IS

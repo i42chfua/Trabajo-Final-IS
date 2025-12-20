@@ -14,13 +14,14 @@ El proyecto está dividido en dos componentes principales:
 ### Requisitos Previos
 * **IDE Recomendado:** Visual Studio 2022 (con soporte para C++).
 * **Sistema de Control de Versiones:** Git.
+* **Importante** Ubicar el repositorio en la ruta del gestor de archivos más corta posible, para no dar lugar a problemas con Visual Studio.
 
 ### Descarga del Repositorio
 Para obtener el código fuente, clona el repositorio utilizando el siguiente comando en tu terminal:
 
 ```bash
 git clone https://github.com/i42chfua/Trabajo-Final-IS
-```
+``` 
 
 #### 🛠️ Instrucciones de Ejecución (Importante)
 Al abrir la solución (.slnx o .sln) en Visual Studio, es posible que el proyecto de pruebas esté marcado por defecto. Para ejecutar correctamente el programa, siga estos pasos:
